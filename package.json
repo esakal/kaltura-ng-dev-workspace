@@ -1,0 +1,24 @@
+{
+  "name": "kaltura-ng-workspace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "kws": "./bin/kworkspace.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "find-root": "^1.0.0",
+    "glob": "^7.1.2",
+    "json2csv": "^3.7.3",
+    "lerna": "file:./external/lerna-v2.0.0-rc.5.tgz",
+    "license-checker": "^11.0.0",
+    "npmlog": "^4.1.2",
+    "read-pkg": "^2.0.0",
+    "shelljs": "^0.7.8"
+  }
+}
