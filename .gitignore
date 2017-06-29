@@ -9,6 +9,7 @@ npm-debug.log
 .idea/*
 *.iml
 
+lib/
 # Windows
 Thumbs.db
 Desktop.ini
