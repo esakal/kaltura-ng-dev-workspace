@@ -1,4 +1,15 @@
 import log from 'npmlog';
+import _ from "lodash";
+
+import Repository from './repository';
+
+export const builder = {
+  "loglevel": {
+    defaultDescription: "info",
+    describe: "What level of logs to report.",
+    type: "string",
+  }
+};
 
 export default class Command
 {
@@ -18,7 +29,11 @@ export default class Command
 		this.logger = log.newGroup(this.name);
 
 		log.resume();
-	}
+
+    this.repository = new Repository();
+
+    log.silly("options",this.options);
+  }
 
 	get name() {
 		// For a class named "FooCommand" this returns "foo".
@@ -33,6 +48,18 @@ export default class Command
 	{
 		this.runCommand();
 	}
+
+  get options() {
+    if (!this._options) {
+      this._options = _.defaults(
+        {},
+        // CLI flags, which if defined overrule subsequent values
+        this._flags
+      );
+    }
+
+    return this._options;
+  }
 }
 
 

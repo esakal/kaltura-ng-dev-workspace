@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-import log from 'npmlog';
 import path from 'path';
 import fs from  'fs';
 import json2csv from 'json2csv';
-import shell from 'shelljs';
 import checker  from 'license-checker';
 import findRoot from 'find-root';
 import glob from 'glob';
@@ -25,12 +23,12 @@ export default class LicensesCommand extends Command {
 		const pkgData = fs.existsSync(packageRootPath) ? readPkg.sync(packageRootPath, {normalize: false}) : null;
 
 		if (pkgData && pkgData.name) {
-			log.verbose('licenses', `handling package in path '${packageRootPath}'`);
+			this.logger.verbose('licenses', `handling package in path '${packageRootPath}'`);
 			const packageLicenses = await this.getPackageLicenses(packageRootPath, pkgData);
 
 			const subPackagesLicenses = await this.getSubPackagesLicenses(packageRootPath);
 
-			log.info('licenses', `got ${subPackagesLicenses.length} sub-packages licesnses`);
+			this.logger.info('licenses', `got ${subPackagesLicenses.length} sub-packages licesnses`);
 			subPackagesLicenses.forEach(subPackageLicenses => {
 
 				Object.keys(subPackageLicenses).forEach(subPackageLicenseName => {
@@ -50,9 +48,9 @@ export default class LicensesCommand extends Command {
 			});
 			const csvFile = this.convertToCsv(packageLicenses);
 			fs.writeFileSync('licenses.csv', csvFile, 'utf8');
-			log.info('licenses', `create file 'licenses.csv'`);
+			this.logger.info('licenses', `create file 'licenses.csv'`);
 		} else {
-			log.warn('licenses', `failed to find root package from path '${process.cwd()}', aborting`);
+			this.logger.warn('licenses', `failed to find root package from path '${process.cwd()}', aborting`);
 		}
 	}
 
@@ -92,7 +90,7 @@ export default class LicensesCommand extends Command {
 
 	async getSubPackagesLicenses(packagePath) {
 		const result = [];
-		log.info('licenses', `get license for sub-packages`);
+		this.logger.info('licenses', `get license for sub-packages`);
 
 		const lernaFilePath = path.resolve(packagePath, 'lerna.json');
 		const lernaData = fs.existsSync(lernaFilePath) ? JSON.parse(fs.readFileSync(lernaFilePath)) : null;
@@ -124,7 +122,7 @@ export default class LicensesCommand extends Command {
 				}
 			}
 		} else {
-			log.verbose('licenses', `folder not containing 'lerna.json', assume package doesn't have sub-packages`);
+			this.logger.verbose('licenses', `folder not containing 'lerna.json', assume package doesn't have sub-packages`);
 		}
 
 		return result;
@@ -134,12 +132,12 @@ export default class LicensesCommand extends Command {
 		let result = {};
 
 		if (!pkgData || !fs.existsSync(packagePath)) {
-			log.error('licenses', `missing valid package path and package.json data`);
+			this.logger.error('licenses', `missing valid package path and package.json data`);
 			process.exit(1);
 		}
 
-		log.info('licenses', `get license for package '${pkgData.name}'`, packagePath);
-		log.verbose('licenses', `package path '${packagePath}'`);
+		this.logger.info('licenses', `get license for package '${pkgData.name}'`, packagePath);
+		this.logger.verbose('licenses', `package path '${packagePath}'`);
 
 		try {
 			const packageToTypeMapping = {};
@@ -159,10 +157,10 @@ export default class LicensesCommand extends Command {
 				}
 			});
 
-			log.info('licenses', `package '${pkgData.name}' has ${Object.keys(result).length} licenses`);
+			this.logger.info('licenses', `package '${pkgData.name}' has ${Object.keys(result).length} licenses`);
 		}
 		catch (e) {
-			log.error(e);
+			this.logger.error(e);
 			process.exit(1);
 		}
 

@@ -19,3 +19,6 @@ Desktop.ini
 **/.DS_Store
 
 dist
+
+lerna.json
+lerna-*.log
