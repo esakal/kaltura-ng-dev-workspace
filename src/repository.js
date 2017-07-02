@@ -129,8 +129,8 @@ export default class Repository
         tracker.info(`repository folder '${repo.name}' exists, skip creation of repository`);
       }else
       {
-        tracker.info(`git clone repository '${repo.name}' from '${repo.repoUri}`);
-        shelljs.exec(`git clone ${repo.repoUri} ${repo.name}`);
+        tracker.info(`git clone repository '${repo.name}' from '${repo.gitRepoUri}'`);
+        shelljs.exec(`git clone ${repo.gitRepoUri} ${repo.name}`);
       }
       tracker.completeWork(1);
     });
