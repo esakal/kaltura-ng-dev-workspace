@@ -6,7 +6,7 @@ import fs from 'fs';
 import findUp from 'find-up';
 import writeJsonFile from 'write-json-file';
 
-const repositoryUriPattern = new RegExp('https:[/][/]github.com[/].*?[/](.*?)[.]git','i');
+const repositoryUriPattern = new RegExp('(https:[/][/]github.com[/].*?[/](.*?)[.]git)(?:#(.*))?$','i');
 
 export default class Repository
 {
@@ -41,9 +41,9 @@ export default class Repository
     log.verbose(`extracting 'kaltura-ws.json' repositories list`,kalturaWSJson);
     const repositories = [];
 
-    kalturaWSJson.repositories.forEach(gitRepoUri =>
+    kalturaWSJson.repositories.forEach(repoUri =>
     {
-      const repoTokens = repositoryUriPattern.exec(gitRepoUri);
+      const repoTokens = repositoryUriPattern.exec(repoUri);
 
       if (!repoTokens)
       {
@@ -52,9 +52,11 @@ export default class Repository
         return;
       }
 
-      const repoName = repoTokens[1];
+      const gitRepoUri = repoTokens[1]
+      const repoName = repoTokens[2];
+      const defaultBranch = repoTokens.length >= 3 ? repoTokens[3] : null;
       const repoPath = path.join(this.rootPath,repoName);
-      repositories.push({ name : repoName, path : repoPath, gitRepoUri});
+      repositories.push({ name : repoName, path : repoPath, gitRepoUri, defaultBranch});
     });
     this.repositories = repositories;
 
@@ -68,15 +70,7 @@ export default class Repository
       "NOTICE" : "This file is used internally by kaltura-ng-workspace. you should avoid using lerna cli directly",
       "lerna": "0.0.2",
       packages : [],
-      "npmClient": "yarn",
-      "commands": {
-        "publish": {
-          "ignore": [
-            "**/*",
-            "*"
-          ]
-        }
-      }
+      "npmClient": "yarn"
     };
 
     tracker.addWork(this.repositories.length);
@@ -129,8 +123,14 @@ export default class Repository
         tracker.info(`repository folder '${repo.name}' exists, skip creation of repository`);
       }else
       {
-        tracker.info(`git clone repository '${repo.name}' from '${repo.gitRepoUri}'`);
-        shelljs.exec(`git clone ${repo.gitRepoUri} ${repo.name}`);
+        tracker.info(`git clone repository '${repo.name}' from '${repo.gitRepoUri}'`, { defaultBranch : repo.defaultBranch });
+
+        const command = ['git clone',
+          repo.defaultBranch ? `-b ${repo.defaultBranch}` : '',
+          repo.gitRepoUri,
+          repo.name];
+        tracker.silly("command", command.join(" "));
+        shelljs.exec(command.join(" "));
       }
       tracker.completeWork(1);
     });
