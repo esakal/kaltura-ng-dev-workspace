@@ -66,7 +66,7 @@ export default class Repository
     const tracker = log.newItem('syncLernaJsonFile');
     const lernaJson = {
       "NOTICE" : "This file is used internally by kaltura-ng-workspace. you should avoid using lerna cli directly",
-      "lerna": "2.0.0-rc.5",
+      "lerna": "0.0.2",
       packages : [],
       "npmClient": "yarn",
       "commands": {
