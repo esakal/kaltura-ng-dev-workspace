@@ -34,7 +34,7 @@ export default class SetupCommand extends Command {
       this.repository.runLernaCommand(`clean`);
 	  }
 
-    log.info("bootstrap repositories dependencies");
+    log.info("bootstrap repositories dependencies (this action might take several minutes)");
     this.repository.runLernaCommand(`bootstrap --nohoist`);
 
     if (this.options.build) {
