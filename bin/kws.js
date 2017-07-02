@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 require("babel-polyfill");
+var shelljs = require('shelljs');
+
+shelljs.config.fatal = true;
 
 var globalOptions = require('../lib/command').builder;
 const yargs = require('yargs');
