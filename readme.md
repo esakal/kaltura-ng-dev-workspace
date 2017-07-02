@@ -76,8 +76,6 @@ $ yarn run kws -- setup
 #### init
 
 #### setup
-TBD
-- [ ] support for lerna.json
 
 #### run
 
