@@ -140,23 +140,28 @@ export default class Repository
   }
 
   runLernaCommand(lernaArgs) {
-    // we are using custom lerna package for now which so we need to run that
-    // specific lerna version.
-    const customLernaBinPath = __dirname;
 
-    log.silly(`running lerna from ${customLernaBinPath} with arguments '${lernaArgs}'`);
-    log.silly(`node lerna ${lernaArgs} --loglevel ${log.level}`);
+    const customLernaPath = path.resolve(__dirname,'../');
 
-    const lernaPaths = findNodeModules({
-      cwd: __dirname,
+    log.silly('lernaArgs', lernaArgs);
+
+    const lernaPackagePaths = findNodeModules({
+      cwd: customLernaPath,
       searchFor: 'node_modules/lerna'
     });
 
-    if (lernaPaths && lernaPaths.length)
+    if (lernaPackagePaths && lernaPackagePaths.length)
     {
-      const lernaScriptPath = path.join(path.resolve(__dirname,lernaPaths[0]),'bin/lerna');
+      const lernaScriptPath = path.join(lernaPackagePaths[0],'bin/lerna');
       log.silly('lernaScriptPath',lernaScriptPath);
-      shelljs.exec(`node ${lernaScriptPath} lernaArgs --loglevel=${log.level}`);
+      shelljs.pushd(customLernaPath)
+      try {
+        shelljs.exec(`node ${lernaScriptPath} ${lernaArgs} --loglevel=${log.level}`);
+      }catch(err)
+      {
+        shelljs.popd;
+        throw err;
+      }
 
     }else {
       throw new Error("failed to find valid 'lerna' package installation");
