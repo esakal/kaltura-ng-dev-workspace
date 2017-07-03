@@ -6,8 +6,9 @@ All notable changes to this project will be documented in this file. See [standa
 ## 1.0.2 (2017-07-03)
 
 
-### Bug Fixes
+### Features
 
-* clone repositories failure ([d2e15a9](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/d2e15a9))
-* clone repositories failure ([56f81aa](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/56f81aa))
-* update lerna version in auto-generated lerna.json file ([6496229](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/6496229))
+* add 'setup' command to clone repositories bind them together and build the workspace.
+* add 'licenses' command to fetch all licenses of 3rd party in the workspace and create a licenses summary file.
+* add 'run' command to run npm script command on all workspace repos.
+* add 'clean' command to remove all workspace repos node_modules folder.
