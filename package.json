@@ -1,6 +1,6 @@
 {
   "name": "@kaltura-ng/dev-workspace",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Kaltura internal tool used to setup Kaltura applications development workspace",
   "bin": {
     "kws": "./bin/kws.js"
@@ -21,7 +21,7 @@
     "type": "git",
     "url": "https://github.com/kaltura/kaltura-ng-dev-workspace"
   },
-  "files" : [
+  "files": [
     "lib/",
     "readme.md",
     "package.json",
