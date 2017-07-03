@@ -1,8 +1,7 @@
 {
   "name": "@kaltura-ng/dev-workspace",
   "version": "1.0.2",
-  "description": "",
-  "main": "index.js",
+  "description": "Kaltura internal tool used to setup Kaltura applications development workspace",
   "bin": {
     "kws": "./bin/kws.js"
   },
@@ -10,7 +9,26 @@
     "build": "babel src -d lib",
     "release": "standard-version"
   },
-  "author": "",
+  "author": {
+    "name": "Kaltura Community",
+    "email": "community@kaltura.com"
+  },
+  "engines": {
+    "node": ">= 7.0.0",
+    "yarn": ">= 0.24.6"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaltura/kaltura-ng-dev-workspace"
+  },
+  "files" : [
+    "lib/",
+    "readme.md",
+    "package.json",
+    "bin/*",
+    "LICENSE",
+    "src/"
+  ],
   "license": "ISC",
   "dependencies": {
     "find-root": "^1.0.0",
@@ -23,7 +41,8 @@
     "read-pkg": "^2.0.0",
     "shelljs": "^0.7.8",
     "standard-version": "^4.2.0",
-    "write-json-file": "^2.2.0"
+    "write-json-file": "^2.2.0",
+    "babel-polyfill": "^6.23.0"
   },
   "devDependencies": {
     "babel": "^6.23.0",
@@ -32,7 +51,6 @@
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-plugin-transform-regenerator": "^6.24.1",
-    "babel-polyfill": "^6.23.0",
     "babel-preset-env": "^1.5.2",
     "babel-preset-es2015": "^6.24.1",
     "find-up": "^2.1.0",
