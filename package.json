@@ -31,6 +31,8 @@
   ],
   "license": "ISC",
   "dependencies": {
+    "babel-polyfill": "^6.23.0",
+    "find-node-modules": "^1.0.4",
     "find-root": "^1.0.0",
     "glob": "^7.1.2",
     "json2csv": "^3.7.3",
@@ -41,8 +43,7 @@
     "read-pkg": "^2.0.0",
     "shelljs": "^0.7.8",
     "standard-version": "^4.2.0",
-    "write-json-file": "^2.2.0",
-    "babel-polyfill": "^6.23.0"
+    "write-json-file": "^2.2.0"
   },
   "devDependencies": {
     "babel": "^6.23.0",

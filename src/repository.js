@@ -5,6 +5,7 @@ import shelljs from 'shelljs';
 import fs from 'fs';
 import findUp from 'find-up';
 import writeJsonFile from 'write-json-file';
+import findNodeModules from 'find-node-modules';
 
 const repositoryUriPattern = new RegExp('(https:[/][/]github.com[/].*?[/](.*?)[.]git)(?:#(.*))?$','i');
 
@@ -138,20 +139,28 @@ export default class Repository
     tracker.finish();
   }
 
-  runLernaCommand(lernaArgs)
-  {
+  runLernaCommand(lernaArgs) {
     // we are using custom lerna package for now which so we need to run that
     // specific lerna version.
     const customLernaBinPath = __dirname;
 
     log.silly(`running lerna from ${customLernaBinPath} with arguments '${lernaArgs}'`);
     log.silly(`node lerna ${lernaArgs} --loglevel ${log.level}`);
-    try {
-      shelljs.pushd(__dirname);
-      shelljs.exec(`node ../node_modules/lerna/bin/lerna ${lernaArgs} --loglevel=${log.level}`);
-    }catch (err) {
-      shelljs.popd();
-      throw err;
+
+    const lernaPaths = findNodeModules({
+      cwd: __dirname,
+      searchFor: 'node_modules/lerna'
+    });
+
+    if (lernaPaths && lernaPaths.length)
+    {
+      const lernaScriptPath = path.join(path.resolve(__dirname,lernaPaths[0]),'bin/lerna');
+      log.silly('lernaScriptPath',lernaScriptPath);
+      shelljs.exec(`node ${lernaScriptPath} lernaArgs --loglevel=${log.level}`);
+
+    }else {
+      throw new Error("failed to find valid 'lerna' package installation");
     }
+
   }
 }
