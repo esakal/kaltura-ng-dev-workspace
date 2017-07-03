@@ -43,8 +43,9 @@ $ yarn add @kaltura-ng/dev-workspace
 
 - create file `kaltura-ws.json` with the following format:
 
-```bash
+```json
 {
+  "version" : "1.0.1",
   "repositories": [
     "https://github.com/kaltura/kaltura-ng.git",
     "https://github.com/kaltura/kaltura-ng-mc-theme.git",
@@ -52,23 +53,27 @@ $ yarn add @kaltura-ng/dev-workspace
   ]
 }
 ```
-**Note**: you should modify repositories property to hold a list of relevant repositories to your project **ordering them by the dependency constraints**
+**Notes**: 
+- you should modify repositories property to hold a list of relevant repositories to your kaltura project **ordering them by the dependency constraints**.
+- the sample above will setup your workspace to develop [kmc-ng application](https://github.com/kaltura/kmc-ng).
   
 - add the following to your `package.json`:
-```bash
+```json
 {
   ...
   scripts : {
-    "kws" : "kws"
+    "kws" : "kws",
+    "setup" : "kws setup",
+    "build" : "kws run build",
+    "clean" : 'kws clean'
   }
 }
 ```
 
 - run setup command to build & symlink your repositories
 ```bash
-$ yarn run kws -- setup 
+$ yarn run setup 
 ```
-
 
   
 ## Commands
