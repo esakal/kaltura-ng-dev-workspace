@@ -28,20 +28,20 @@ This tool was created for Kaltura applications development and is not suppose to
 
 - [x] Ensure you have [node.js installed](https://nodejs.org/en/download/current/), version 7.0.0 or above. 
 - [x] Ensure you have [git installed](https://git-for-windows.github.io/) 
-- [x] Ensure you have [yarn installed](https://yarnpkg.com/lang/en/docs/install/) (we use it for node package management) 
+- [x] Ensure you have [yarn installed](https://yarnpkg.com/lang/en/docs/install/) (we use it for node package management) version 0.24.6 and above. 
 
 #### Setup your workspace
-- create a folder to hold your packages.
-- create `package.json`
+1. create a folder to hold your packages (your workspace root folder).
+2. create `package.json` in your root folder by running the following command:
 ```
  $ yarn init -y
  ```
-- add this tool to your folder
+3. add this tool to your folder in your root folder by running the following command:
 ```
 $ yarn add @kaltura-ng/dev-workspace
 ```
 
-- create file `kaltura-ws.json` with the following format:
+4. create file `kaltura-ws.json` in your root folder with the following format:
 
 ```json
 {
@@ -54,23 +54,23 @@ $ yarn add @kaltura-ng/dev-workspace
 }
 ```
 **Notes**: 
-- you should modify repositories property to hold a list of relevant repositories to your kaltura project **ordering them by the dependency constraints**.
+- **you should modify repositories property to hold a list of relevant repositories to your kaltura project ordering them by the dependency constraints**.
 - the sample above will setup your workspace to develop [kmc-ng application](https://github.com/kaltura/kmc-ng).
   
-- add the following to your `package.json`:
+5. add the following to your `package.json`:
 ```json
 {
   ...
-  scripts : {
+  "scripts" : {
     "kws" : "kws",
     "setup" : "kws setup",
     "build" : "kws run build",
-    "clean" : 'kws clean'
+    "clean" : "kws clean"
   }
 }
 ```
 
-- run setup command to build & symlink your repositories
+6. run setup command to build & symlink your repositories
 ```bash
 $ yarn run setup 
 ```
