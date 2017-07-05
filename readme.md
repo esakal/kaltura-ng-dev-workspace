@@ -61,8 +61,7 @@ $ yarn add @kaltura-ng/dev-workspace
   
 5. add the following to your `package.json`:
 ```json
-{
-  ...
+{  
   "scripts" : {
     "kws" : "kws",
     "setup" : "kws setup",
