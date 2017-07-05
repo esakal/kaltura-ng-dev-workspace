@@ -1,6 +1,8 @@
 # Kaltura Dev Workspace
 
-tool for managing JavaScript projects with multiple packages. 
+[![Gitter chat](https://badges.gitter.im/kaltura-ng/dev-tools.png)](https://gitter.im/kaltura-ng/kaltura-ng) ![npm (scoped)](https://img.shields.io/npm/v/@kaltura-ng/dev-workspace.svg?maxAge=86400)
+
+Tool for managing JavaScript projects with multiple packages. 
 
 ## About
 
