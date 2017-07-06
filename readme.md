@@ -1,6 +1,6 @@
 # Kaltura Dev Workspace
 
-[![Gitter chat](https://badges.gitter.im/kaltura-ng/dev-tools.png)](https://gitter.im/kaltura-ng/dev-tools) ![npm (scoped)](https://img.shields.io/npm/v/@kaltura-ng/dev-workspace.svg?maxAge=86400)
+[![Gitter chat](https://badges.gitter.im/kaltura-ng/dev-tools.png)](https://gitter.im/kaltura-ng/dev-tools) [![npm version](https://badge.fury.io/js/%40kaltura-ng%2Fdev-workspace.svg)](https://badge.fury.io/js/%40kaltura-ng%2Fdev-workspace)
 
 Tool for managing JavaScript projects with multiple packages. 
 
