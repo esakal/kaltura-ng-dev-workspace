@@ -40,8 +40,8 @@ export default class WorkspaceConfig
     this.version = this._config.version;
     this.licenses = this._config.licenses || null;
 
-    log.verbose(`matching kws version ${this.kwsVersion} with config version ${this.version}`);
-    if (!semver.satisfies(this.version, `^${this.kwsVersion}`))
+    log.verbose(`checking competability of kws version ${this.kwsVersion} with config version ${this.version}`);
+    if (!semver.satisfies(this.kwsVersion, `^${this.version}`))
     {
       log.error(`Major version mismatch: The current version '@kaltura-ng/dev-workspace' is ${this.kwsVersion}, but the version in 'kaltura-ws.json' is ${this.version}. You can either update your json file or install '@kaltura-ng/dev-workspace@${this.version}'`);
       process.exit(1);
