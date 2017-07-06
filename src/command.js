@@ -1,7 +1,7 @@
 import log from 'npmlog';
 import _ from "lodash";
 
-import Repository from './repository';
+import WorkspaceConfig from './workspace-config';
 
 export const builder = {
   "loglevel": {
@@ -30,7 +30,7 @@ export default class Command
 
 		log.resume();
 
-    this.repository = new Repository();
+    this.workspace = new WorkspaceConfig();
 
     log.silly("options",this.options);
   }
@@ -46,7 +46,14 @@ export default class Command
 
 	async run()
 	{
-		this.runCommand();
+		try {
+      await this.workspace.load();
+      this.runCommand();
+    }catch(err)
+		{
+			console.log(err);
+			process.exit(1);
+		}
 	}
 
   get options() {

@@ -31,14 +31,14 @@ export default class SetupCommand extends Command {
 
 	  if (this.options.clean) {
       log.info("delete packages 'node_modules' folder");
-      this.repository.runLernaCommand(`clean`);
+      this.workspace.runLernaCommand(`clean`);
 	  }
 
     log.info("bootstrap repositories dependencies (this action might take several minutes)");
-    this.repository.runLernaCommand(`bootstrap --nohoist`);
+    this.workspace.runLernaCommand(`bootstrap --nohoist`);
 
     if (this.options.build) {
-      this.repository.runLernaCommand(`run build`);
+      this.workspace.runLernaCommand(`run build`);
     }
 	}
 }

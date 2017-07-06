@@ -18,6 +18,6 @@ export const description = 'Remove the node_modules directory from all packages.
 
 export default class CleanCommand extends Command {
 	async runCommand() {
-      this.repository.runLernaCommand(`clean --yes`);
+      this.workspace.runLernaCommand(`clean --yes`);
 	}
 }

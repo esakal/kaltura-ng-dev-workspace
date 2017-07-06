@@ -29,6 +29,6 @@ export default class RunCommand extends Command {
       throw new Error("You must specify which npm script to run.");
     }
 
-    this.repository.runLernaCommand(`run ${[this.script].concat(this.args).join(" ")}`);
+    this.workspace.runLernaCommand(`run ${[this.script].concat(this.args).join(" ")}`);
 	}
 }
