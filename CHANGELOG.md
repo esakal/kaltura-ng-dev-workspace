@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.0.0"></a>
+# [2.0.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v1.0.5...v2.0.0) (2017-07-06)
+
+
+### Features
+
+* extract dependency licenses from repo/monorepo ([d7f3596](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/d7f3596))
+
+
+### BREAKING CHANGES
+
+* the 'kaltura-ws.json' file format was updated to support both local repositories and github repositories
+
+
+
 <a name="1.0.5"></a>
 ## [1.0.5](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v1.0.4...v1.0.5) (2017-07-03)
 
