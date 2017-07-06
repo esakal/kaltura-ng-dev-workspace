@@ -46,14 +46,20 @@ $ yarn add @kaltura-ng/dev-workspace
 4. create file `kaltura-ws.json` in your root folder with the following format:
 
 ```json
-{
-  "version" : "1.0.1",
-  "repositories": [
-    "https://github.com/kaltura/kaltura-ng.git",
-    "https://github.com/kaltura/kaltura-ng-mc-theme.git",
-    "https://github.com/kaltura/kmc-ng.git"
-  ]
-}
+ {
+   "version" : "2.0.0",
+   "repositories": [
+     { "origin" : "github", "uri": "https://github.com/kaltura/kaltura-ng.git"},
+     { "origin" : "github", "uri": "https://github.com/kaltura/kaltura-ng-mc-theme.git"},
+     { "origin" : "github", "uri": "https://github.com/kaltura/kmc-ng.git"}
+   ],
+   "licenses" : {
+     "ignoreList" : [      
+       "kaltura-typescript-client"
+     ]
+   }
+ }
+
 ```
 **Notes**: 
 - **you should modify repositories property to hold a list of relevant repositories to your kaltura project ordering them by the dependency constraints**.
@@ -66,6 +72,7 @@ $ yarn add @kaltura-ng/dev-workspace
     "kws" : "kws",
     "setup" : "kws setup",
     "build" : "kws run build",
+    "licenses" : "kws licenses",
     "clean" : "kws clean"
   }
 }
