@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. See [standa
 <a name="2.0.1"></a>
 ## [2.0.1](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.0.0...v2.0.1) (2017-07-06)
 
-
+* Bumping version to publish the right 'lib' folder (which is not under version control).
 
 <a name="2.0.0"></a>
 # [2.0.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v1.0.5...v2.0.0) (2017-07-06)
