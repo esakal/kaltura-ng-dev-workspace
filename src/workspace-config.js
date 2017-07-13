@@ -9,6 +9,7 @@ import findNodeModules from 'find-node-modules';
 import readPkg  from "read-pkg";
 import glob from 'glob';
 import semver from "semver";
+const objectAssignDeep = require(`object-assign-deep`);
 
 
 const repositoryUriPattern = new RegExp('(https:[/][/]github.com[/].*?[/](.*?)[.]git)(?:#(.*))?$','i');
@@ -34,11 +35,12 @@ export default class WorkspaceConfig
 
     this.rootPath = path.dirname(kwsJsonPath);
     log.verbose("rootPath", this.rootPath);
-    this._config = loadJsonFile.sync(kwsJsonPath);
-    log.silly('kaltura-ws', this._config);
+    this._kwsJsonPath = kwsJsonPath;
+    this._kwsConfig = loadJsonFile.sync(kwsJsonPath);
+    log.silly('kaltura-ws', this._kwsConfig);
 
-    this.version = this._config.version;
-    this.licenses = this._config.licenses || null;
+    this.version = this._kwsConfig.version;
+    this.licenses = this._kwsConfig.licenses || null;
 
     log.verbose(`checking competability of kws version ${this.kwsVersion} with config version ${this.version}`);
     if (!semver.satisfies(this.kwsVersion, `^${this.version}`))
@@ -47,18 +49,31 @@ export default class WorkspaceConfig
       process.exit(1);
     }
 
-    await this.loadRepositories();
-    this.createLernaJsonFile();
+    await this._loadRepositories();
+    this._createLernaJsonFile();
 
   }
 
-  async loadRepositories()
+  getKWSCommandValue(path)
+  {
+    return `commands.${path}`.split('.').reduce(function(prev, curr) {
+      return prev ? prev[curr] : undefined
+    }, this._kwsConfig);
+  }
+
+  updateKWSConfig(data)
+  {
+    objectAssignDeep(this._kwsConfig,data);
+    writeJsonFile.sync(this._kwsJsonPath, this._kwsConfig, { indent: 2 });
+  }
+
+  async _loadRepositories()
   {
     log.verbose(`extracting repositories list`);
 
     const repositories = [];
 
-    await Promise.all((this._config.repositories || ['.']).map(repositoryData =>
+    await Promise.all((this._kwsConfig.repositories || ['.']).map(repositoryData =>
     {
       return new Promise(async (resolve, reject) =>
       {
@@ -75,7 +90,7 @@ export default class WorkspaceConfig
               repoPath = path.resolve(this.rootPath,repositoryData.path);
               break;
             case 'github':
-              repoPath = (await this.loadGithubRepo(repositoryData.uri)).repoPath;
+              repoPath = (await this._loadGithubRepo(repositoryData.uri)).repoPath;
               break;
           }
         }else
@@ -96,7 +111,7 @@ export default class WorkspaceConfig
 
           log.silly('isMonoRepo',isMonoRepo);
 
-          const repoPackages = isMonoRepo ?   this.extractMonoRepoPackages(repoLernaFilePath) : [];
+          const repoPackages = isMonoRepo ?   this._extractMonoRepoPackages(repoLernaFilePath) : [];
 
           repositories.push({ name : repoName, path : repoPath,  pkgData, isMonoRepo, packages : repoPackages});
           resolve();
@@ -118,7 +133,7 @@ export default class WorkspaceConfig
   }
 
 
-  async loadGithubRepo(githubUri) {
+  async _loadGithubRepo(githubUri) {
     const repoGitUriToken = repositoryUriPattern.exec(githubUri);
     if (repoGitUriToken) {
       const repoUri = repoGitUriToken[1];
@@ -147,7 +162,7 @@ export default class WorkspaceConfig
     }
   }
 
-  extractMonoRepoPackages(repoLernaFilePath) {
+  _extractMonoRepoPackages(repoLernaFilePath) {
     const result = [];
     log.silly('repoLernaFilePath',repoLernaFilePath);
     if (fs.existsSync(repoLernaFilePath)) {
@@ -185,7 +200,7 @@ export default class WorkspaceConfig
     return result;
   }
 
-  createLernaJsonFile()
+  _createLernaJsonFile()
   {
     const tracker = log.newItem('syncLernaJsonFile');
     const lernaJson = {
@@ -226,6 +241,28 @@ export default class WorkspaceConfig
     log.verbose('creating file lerna.json. This file is used internally by kaltura-ng-workspace. you should avoid using lerna cli directly.');
     log.verbose('new file lerna.json content',lernaJson);
     writeJsonFile.sync(path.join(this.lernaDirPath,'lerna.json'), lernaJson, { indent: 2 });
+  }
+
+  async runShellCommnad(command,silent)
+  {
+    return new Promise((resolve,reject) =>
+    {
+      log.info(`running shell command ${command}`);
+      shelljs.exec(command, {silent}, function(code, stdout, stderr) {
+
+        log.silly(`shell exit code ${code}`);
+        log.silly("shell stdout",stdout);
+        log.silly("shell stderr",stderr);
+
+        if (code === 0)
+        {
+          resolve(stdout);
+        }else {
+          reject(stderr);
+        }
+
+      });
+    });
   }
 
   runLernaCommand(lernaArgs) {
