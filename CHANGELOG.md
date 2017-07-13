@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.1.0"></a>
+# [2.1.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.0.2...v2.1.0) (2017-07-13)
+
+
+### Features
+
+* add bookmark command that allow store/restore to specific commit using friendly names ([b461ecf](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/b461ecf))
+
+
+
 <a name="2.0.2"></a>
 ## [2.0.2](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.0.1...v2.0.2) (2017-07-06)
 
