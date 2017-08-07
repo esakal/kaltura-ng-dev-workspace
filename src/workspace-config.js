@@ -221,14 +221,13 @@ export default class WorkspaceConfig
       {
         repo.packages.forEach(repoPackage =>
         {
-          const monoRepoPackageName = `${repo.name}/${repoPackage.name}`;
-          tracker.verbose(`adding package to lerna packages`,monoRepoPackageName);
-          lernaJson.packages.push(`${this.rootPath}/${monoRepoPackageName}`);
+          tracker.verbose(`adding package to lerna packages`,repoPackage.name);
+          lernaJson.packages.push(repoPackage.path);
         });
 
       }else {
-        tracker.verbose(`adding repo to lerna packages`,repo.name);
-        lernaJson.packages.push(`${this.rootPath}/${repo.name}`);
+        tracker.verbose(`adding repo to lerna packages`,repo.path);
+        lernaJson.packages.push(repo.path);
       }
 
       tracker.completeWork(1);
