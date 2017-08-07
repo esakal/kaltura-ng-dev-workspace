@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.1.1"></a>
+## [2.1.1](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.1.0...v2.1.1) (2017-08-07)
+
+
+### Bug Fixes
+
+* support symlink of repositories using scoped package naming ([8239baf](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/8239baf))
+
+
+
 <a name="2.1.0"></a>
 # [2.1.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.0.2...v2.1.0) (2017-07-13)
 
