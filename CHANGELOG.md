@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.2.0"></a>
+# [2.2.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.1.1...v2.2.0) (2017-09-27)
+
+
+### Features
+
+* execute commands clean/setup on monorepo root folders ([65dcbeb](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/65dcbeb))
+* use npm@5 to manage dependencies instead of yarn ([85e55d9](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/85e55d9))
+
+
+
 <a name="2.1.1"></a>
 ## [2.1.1](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.1.0...v2.1.1) (2017-08-07)
 
