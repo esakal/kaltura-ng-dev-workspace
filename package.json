@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "babel src -d lib",
-    "release": "standard-version"
+    "release": "npm run build && standard-version"
   },
   "author": {
     "name": "Kaltura Community",
