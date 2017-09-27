@@ -207,7 +207,7 @@ export default class WorkspaceConfig
       "NOTICE" : "This file is used internally by kaltura-ng-workspace. you should avoid using lerna cli directly",
       "lerna": "0.0.2",
       packages : [],
-      "npmClient": "yarn"
+      "npmClient": "npm"
     };
 
     tracker.addWork(this.repositories.length);
