@@ -9,7 +9,7 @@ import conventionalChangelog from 'conventional-changelog';
 import { accessSync } from 'fs-access';
 import showdown from 'showdown';
 import util from 'util';
-import { lint, load, read } from '@commitlint/core';
+import { lint } from '@commitlint/core';
 import { rules } from '@commitlint/config-angular';
 
 export async function handler(argv) {
@@ -47,9 +47,8 @@ export default class PublishCommand extends Command {
     if (this.options.prepare) {
       this.logger.info('Prepare phase');
 
-      if (!(await this.lintLastCommit())) {
-        this.logger.error('Last commit is NOT tapping into conventional-changelog');
-        return;
+      if (!(await this.lintCommitsSinceLastRelease())) {
+        this.logger.warn('Some of commits since last release is NOT tapping into conventional-commits. Consider following conventional-commits standard http://conventionalcommits.org/.');
       }
 
       this.logger.info('Get new version.');
@@ -75,9 +74,7 @@ export default class PublishCommand extends Command {
       this.logger.info('Publish phase.');
 
       if (!!(await this.workspace.runShellCommnad('git status -s', true))) {
-        this.logger.warn('It seems that you have uncommitted changes.');
-        this.logger.warn('To perform this command you should either commit your changes or reset them.');
-        this.logger.warn('Aborting command.');
+        this.logger.warn('It seems that you have uncommitted changes. To perform this command you should either commit your changes or reset them. Aborting command.');
         return;
       }
 
@@ -85,15 +82,16 @@ export default class PublishCommand extends Command {
       await this.workspace.runShellCommnad(`git tag -a ${ version } -m '${ version }'`); // TODO [kmcng] tag message
 
       this.logger.info('Publishing release.');
-      await this.workspace.runShellCommnad('git push --follow-tags origin master')
+      await this.workspace.runShellCommnad('git push --follow-tags origin master');
     }
 
   }
 
-  async lintLastCommit() {
-    return Promise.all([load(), read({ from: 'HEAD~1' })])
-      .then(([, [commit]]) => lint(commit, rules))
-      .then(result => result.valid);
+  async lintCommitsSinceLastRelease() {
+    const commits = await this.workspace.runShellCommnad('git log `git describe --tags --abbrev=0`..HEAD --oneline');
+    const result = lint(commits, rules);
+
+    return result.valid;
   }
 
 
@@ -191,7 +189,7 @@ export default class PublishCommand extends Command {
 
   async commitChanges(newVersion) {
     const paths = [changelogFile, changelogComponentFile];
-    const commitMessage = `Commit changes for ${ newVersion } release`; // TODO [kmcng] commit message
+    const commitMessage = `chore(release): ${newVersion}`;
     let msg = 'committing %s';
     let toAdd = `${changelogFile} ${changelogComponentFile}`;
 
