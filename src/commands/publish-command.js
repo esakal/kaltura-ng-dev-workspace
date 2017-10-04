@@ -9,6 +9,8 @@ import conventionalChangelog from 'conventional-changelog';
 import { accessSync } from 'fs-access';
 import showdown from 'showdown';
 import util from 'util';
+import { lint, load, read } from '@commitlint/core';
+import { rules } from '@commitlint/config-angular';
 
 export async function handler(argv) {
   await new PublishCommand(argv._, argv).run();
@@ -21,15 +23,15 @@ export const description = 'publish a new version';
 export const builder = {
   'prepare': {
     group: 'Command Options:',
-    describe: 'Prepare phase',
+    describe: 'Prepare phase: bump version, update configs, update change logs',
     type: 'boolean',
     default: true,
   },
   'publish': {
     group: 'Command Options:',
-    describe: 'Publish phase',
+    describe: 'Publish phase: tag release and push changes',
     type: 'boolean',
-    default: false // TODO [kmcng] default will be true
+    default: true
   }
 };
 
@@ -43,52 +45,61 @@ let version = pkg.version;
 export default class PublishCommand extends Command {
   async runCommand() {
     if (this.options.prepare) {
-      this.logger.verbose('Prepare phase');
+      this.logger.info('Prepare phase');
 
-      this.logger.verbose('Get new version and update configs.\n');
-      version = await this.getNewVersion();
-
-      this.logger.verbose('Update changelog.\n');
-      const changelog = await this.updateChangelog(version);
-
-      this.logger.verbose('Update changelog component.\n');
-      this.updateChangelogComponent(changelog);
-
-      this.logger.verbose('Update app-config with new version.\n');
-      this.updateAppConfigVersion(version);
-
-      this.logger.verbose('Commit changes.\n');
-      await this.execCommit(version);
-    }
-
-    if (this.options.publish) {
-      this.logger.verbose('Publish phase.\n');
-
-      const hasUncommittedChanges = !!(await this.workspace.runShellCommnad('git status -s', true));
-      this.logger.silly('hasUncommittedChanges', hasUncommittedChanges);
-
-      if (hasUncommittedChanges) {
-        this.logger.warn('It seems that you have uncommitted changes.\n');
-        this.logger.warn('To perform this command you should either commit your changes or reset them.\n');
-        this.logger.warn('Aborting command.\n');
+      if (!(await this.lintLastCommit())) {
+        this.logger.error('Last commit is NOT tapping into conventional-changelog');
         return;
       }
 
-      this.logger.verbose(`Tagging release. Current version: ${ version }.\n`);
-      await this.workspace.runShellCommnad(`git tag -a ${ version } -m "${ version }"`); // TODO [kmcng] tag message
+      this.logger.info('Get new version.');
+      version = await this.getNewVersion();
 
-      this.logger.verbose('Publishing release.\n');
+      this.logger.info('Update configs.');
+      this.updateConfigs(version);
+
+      this.logger.info('Update changelog.');
+      const changelog = await this.updateChangelog(version);
+
+      this.logger.info('Update changelog component.');
+      this.updateChangelogComponent(changelog);
+
+      this.logger.info('Update app-config with new version.');
+      this.updateAppConfigVersion(version);
+
+      this.logger.info('Commit changes.');
+      await this.commitChanges(version);
+    }
+
+    if (this.options.publish) {
+      this.logger.info('Publish phase.');
+
+      if (!!(await this.workspace.runShellCommnad('git status -s', true))) {
+        this.logger.warn('It seems that you have uncommitted changes.');
+        this.logger.warn('To perform this command you should either commit your changes or reset them.');
+        this.logger.warn('Aborting command.');
+        return;
+      }
+
+      this.logger.info(`Tagging release. Current version: ${ version }.`);
+      await this.workspace.runShellCommnad(`git tag -a ${ version } -m '${ version }'`); // TODO [kmcng] tag message
+
+      this.logger.info('Publishing release.');
       await this.workspace.runShellCommnad('git push --follow-tags origin master')
     }
 
   }
 
+  async lintLastCommit() {
+    return Promise.all([load(), read({ from: 'HEAD~1' })])
+      .then(([, [commit]]) => lint(commit, rules))
+      .then(result => result.valid);
+  }
+
+
   async getNewVersion() {
     const release = await this.bumpVersion();
-    const newVersion = semver.valid(release.releaseType) || semver.inc(pkg.version, release.releaseType, false);
-    this.updateConfigs(newVersion);
-
-    return newVersion;
+    return semver.valid(release.releaseType) || semver.inc(pkg.version, release.releaseType, false);
   }
 
   bumpVersion() {
@@ -111,8 +122,6 @@ export default class PublishCommand extends Command {
           const config = require(configPath);
           config.version = newVersion;
           fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
-          // flag any config files that we modify the version # for
-          // as having been updated.
           configsToUpdate[configPath] = true;
         }
       } catch (err) {
@@ -127,7 +136,6 @@ export default class PublishCommand extends Command {
     return new Promise((resolve, reject) => {
       this.createIfMissing();
       let oldContent = fs.readFileSync(changelogFile, 'utf-8');
-      // find the position of the last release and remove header:
       if (oldContent.indexOf('<a name=') !== -1) {
         oldContent = oldContent.substring(oldContent.indexOf('<a name='));
       }
@@ -177,12 +185,11 @@ export default class PublishCommand extends Command {
       }
 
       const result = data.replace(/'appVersion':.*,/g, `'appVersion': '${ newVersion }',`);
-
       fs.writeFileSync(filePath, result, 'utf8');
     });
   }
 
-  async execCommit (newVersion) {
+  async commitChanges(newVersion) {
     const paths = [changelogFile, changelogComponentFile];
     const commitMessage = `Commit changes for ${ newVersion } release`; // TODO [kmcng] commit message
     let msg = 'committing %s';
@@ -197,7 +204,7 @@ export default class PublishCommand extends Command {
     });
 
     await this.workspace.runShellCommnad(`git add ${toAdd}`);
-    await this.workspace.runShellCommnad(`git commit ${toAdd} -m "${this.formatCommitMessage(commitMessage, newVersion)}"`);
+    await this.workspace.runShellCommnad(`git commit ${toAdd} -m '${this.formatCommitMessage(commitMessage, newVersion)}'`);
   }
 
   formatCommitMessage(msg, newVersion) {
