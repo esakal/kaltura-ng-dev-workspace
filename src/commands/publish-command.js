@@ -125,7 +125,6 @@ export default class ReleaseCommand extends Command {
 
   async getNewVersion(currentVersion) {
     const release = await this.bumpVersion();
-    console.log(this.workspace.version);
     return semver.valid(release.releaseType) || semver.inc(currentVersion, release.releaseType, false);
   }
 
