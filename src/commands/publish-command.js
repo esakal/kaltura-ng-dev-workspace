@@ -57,7 +57,7 @@ export default class ReleaseCommand extends Command {
     this.changelogFile = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
     this.configsToUpdate = {};
 
-    const currentBranch = (await this.workspace.runShellCommnad('git name-rev --name-only HEAD')).trim();
+    const currentBranch = (await this.workspace.runShellCommand('git name-rev --name-only HEAD')).trim();
     const pkg = loadJsonFile.sync(findUp.sync('package.json', { cwd: process.cwd() }));
     let version = pkg.version;
 
@@ -96,18 +96,18 @@ export default class ReleaseCommand extends Command {
     if (this.options.publish) {
       this.logger.info('Publish phase.');
 
-      if (!!(await this.workspace.runShellCommnad('git status -s', true))) {
+      if (!!(await this.workspace.runShellCommand('git status -s', true))) {
         this.logger.error('It seems that you have uncommitted changes. To perform this command you should either commit your changes or reset them. Aborting command.');
         return;
       }
 
-      const currentTag = await this.workspace.runShellCommnad('git describe --match="v?.?.?" --abbrev=0');
+      const currentTag = await this.workspace.runShellCommand('git describe --match="v?.?.?" --abbrev=0');
       if (semver.gt(version, currentTag)) {
         this.logger.info(`Tagging release. Current version: ${ version }.`);
-        await this.workspace.runShellCommnad(`git tag -a v${ version } -m 'v${ version }'`);
+        await this.workspace.runShellCommand(`git tag -a v${ version } -m 'v${ version }'`);
 
         this.logger.info('Publishing release.');
-        await this.workspace.runShellCommnad(`git push --follow-tags origin ${this.options.branch}`);
+        await this.workspace.runShellCommand(`git push --follow-tags origin ${this.options.branch}`);
       } else {
         this.logger.error(`Current version (${version}) is less than the last tag (${currentTag}). Abort.`);
       }
@@ -116,7 +116,7 @@ export default class ReleaseCommand extends Command {
   }
 
   async lintCommitsSinceLastRelease() {
-    const commits = await this.workspace.runShellCommnad('git log `git describe --match="v?.?.?" --abbrev=0`..HEAD --oneline');
+    const commits = await this.workspace.runShellCommand('git log `git describe --match="v?.?.?" --abbrev=0`..HEAD --oneline');
     const result = lint(commits, rules);
 
     return result.valid;
@@ -251,8 +251,8 @@ export default class ReleaseCommand extends Command {
       }
     });
 
-    await this.workspace.runShellCommnad(`git add ${toAdd}`);
-    await this.workspace.runShellCommnad(`git commit ${toAdd} -m '${this.formatCommitMessage(commitMessage, newVersion)}'`);
+    await this.workspace.runShellCommand(`git add ${toAdd}`);
+    await this.workspace.runShellCommand(`git commit ${toAdd} -m '${this.formatCommitMessage(commitMessage, newVersion)}'`);
   }
 
   formatCommitMessage(msg, newVersion) {
