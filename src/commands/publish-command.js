@@ -11,14 +11,17 @@ import showdown from 'showdown';
 import util from 'util';
 import { lint } from '@commitlint/core';
 import { rules } from '@commitlint/config-angular';
+import findUp from 'find-up';
+import loadJsonFile from 'load-json-file';
+import writeJsonFile from 'write-json-file';
 
 export async function handler(argv) {
-  await new PublishCommand(argv._, argv).run();
+  await new ReleaseCommand(argv._, argv).run();
 }
 
-export const command = 'publish';
+export const command = 'release';
 
-export const description = 'publish a new version';
+export const description = 'release the new version';
 
 export const builder = {
   'prepare': {
@@ -32,18 +35,38 @@ export const builder = {
     describe: 'Publish phase: tag release and push changes',
     type: 'boolean',
     default: true
+  },
+  'branch': {
+    group: 'Command Options:',
+    describe: 'Change target branch',
+    type: 'string',
+    default: 'master'
   }
 };
 
-const pkgPath = path.resolve(process.cwd(), './package.json');
-const pkg = require(pkgPath);
-const changelogFile = path.resolve(process.cwd(), './CHANGELOG.md');
-const changelogComponentFile = path.resolve(process.cwd(), './src/app/components/changelog/changelog-content/changelog-content.component.html');
-let configsToUpdate = {};
-let version = pkg.version;
 
-export default class PublishCommand extends Command {
+
+export default class ReleaseCommand extends Command {
   async runCommand() {
+    const appConfigPath = this.workspace.getKWSCommandValue('release.appConfig.path');
+    this.appConfigFile = appConfigPath ? findUp.sync(appConfigPath, { cwd: process.cwd() }) : '';
+
+    const changelogComponentPath = this.workspace.getKWSCommandValue('release.changeLog.htmlPath');
+    this.changelogComponentFile = changelogComponentPath ? findUp.sync(changelogComponentPath, { cwd: process.cwd() }) : '';
+
+    this.changelogFile = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
+    this.configsToUpdate = {};
+
+    const currentBranch = (await this.workspace.runShellCommnad('git name-rev --name-only HEAD')).trim();
+    const pkg = loadJsonFile.sync(findUp.sync('package.json', { cwd: process.cwd() }));
+    let version = pkg.version;
+
+    if (this.options.branch !== currentBranch) {
+      this.logger.error('Specified branch is different from active. Please checkout to specified branch or provide relevant branch name.');
+      this.logger.error(`Specified branch: ${this.options.branch}. Active branch: ${currentBranch}`);
+      return;
+    }
+
     if (this.options.prepare) {
       this.logger.info('Prepare phase');
 
@@ -52,7 +75,7 @@ export default class PublishCommand extends Command {
       }
 
       this.logger.info('Get new version.');
-      version = await this.getNewVersion();
+      version = await this.getNewVersion(version);
 
       this.logger.info('Update configs.');
       this.updateConfigs(version);
@@ -64,40 +87,41 @@ export default class PublishCommand extends Command {
       this.updateChangelogComponent(changelog);
 
       this.logger.info('Update app-config with new version.');
-      this.updateAppConfigVersion(version);
-
-      this.logger.info('Commit changes.');
-      await this.commitChanges(version);
+      if (this.updateAppConfigVersion(version)) {
+        this.logger.info('Commit changes.');
+        await this.commitChanges(version);
+      }
     }
 
     if (this.options.publish) {
       this.logger.info('Publish phase.');
 
       if (!!(await this.workspace.runShellCommnad('git status -s', true))) {
-        this.logger.warn('It seems that you have uncommitted changes. To perform this command you should either commit your changes or reset them. Aborting command.');
+        this.logger.error('It seems that you have uncommitted changes. To perform this command you should either commit your changes or reset them. Aborting command.');
         return;
       }
 
       this.logger.info(`Tagging release. Current version: ${ version }.`);
-      await this.workspace.runShellCommnad(`git tag -a ${ version } -m '${ version }'`); // TODO [kmcng] tag message
+      await this.workspace.runShellCommnad(`git tag -a v${ version } -m 'v${ version }'`);
 
       this.logger.info('Publishing release.');
-      await this.workspace.runShellCommnad('git push --follow-tags origin master');
+      // await this.workspace.runShellCommnad(`git push --follow-tags origin ${this.options.branch}`);
     }
 
   }
 
   async lintCommitsSinceLastRelease() {
-    const commits = await this.workspace.runShellCommnad('git log `git describe --tags --abbrev=0`..HEAD --oneline');
+    const commits = await this.workspace.runShellCommnad('git log `git describe --match="v?.?.?" --abbrev=0`..HEAD --oneline');
     const result = lint(commits, rules);
 
     return result.valid;
   }
 
 
-  async getNewVersion() {
+  async getNewVersion(currentVersion) {
     const release = await this.bumpVersion();
-    return semver.valid(release.releaseType) || semver.inc(pkg.version, release.releaseType, false);
+    console.log(this.workspace.version);
+    return semver.valid(release.releaseType) || semver.inc(currentVersion, release.releaseType, false);
   }
 
   bumpVersion() {
@@ -110,17 +134,17 @@ export default class PublishCommand extends Command {
   }
 
   updateConfigs(newVersion) {
-    configsToUpdate[path.resolve(process.cwd(), './package.json')] = false;
-    configsToUpdate[path.resolve(process.cwd(), './package-lock.json')] = false;
+    this.configsToUpdate[findUp.sync('package.json', { cwd: process.cwd() })] = false;
+    this.configsToUpdate[findUp.sync('package-lock.json', { cwd: process.cwd() })] = false;
 
-    Object.keys(configsToUpdate).forEach(configPath => {
+    Object.keys(this.configsToUpdate).forEach(configPath => {
       try {
         const stat = fs.lstatSync(configPath);
         if (stat.isFile()) {
-          const config = require(configPath);
+          const config = loadJsonFile.sync(configPath);
           config.version = newVersion;
-          fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n', 'utf8');
-          configsToUpdate[configPath] = true;
+          writeJsonFile.sync(configPath, config, { indent: 2 });
+          this.configsToUpdate[configPath] = true;
         }
       } catch (err) {
         if (err.code !== 'ENOENT') {
@@ -133,6 +157,7 @@ export default class PublishCommand extends Command {
   updateChangelog(newVersion) {
     return new Promise((resolve, reject) => {
       this.createIfMissing();
+      const changelogFile = this.changelogFile;
       let oldContent = fs.readFileSync(changelogFile, 'utf-8');
       if (oldContent.indexOf('<a name=') !== -1) {
         oldContent = oldContent.substring(oldContent.indexOf('<a name='));
@@ -160,41 +185,61 @@ export default class PublishCommand extends Command {
 
   createIfMissing() {
     try {
-      accessSync(changelogFile, fs.F_OK)
+      accessSync(this.changelogFile, fs.F_OK)
     } catch (err) {
       if (err.code === 'ENOENT') {
-        fs.writeFileSync(changelogFile, '\n');
+        fs.writeFileSync(this.changelogFile, '\n');
       }
     }
   }
 
   updateChangelogComponent(changelog) {
-    const converter = new showdown.Converter();
-    const html = converter.makeHtml(changelog).replace(/[{}]+/g, '');
-    fs.writeFileSync(changelogComponentFile, html, 'utf8');
+    if (this.changelogComponentFile) {
+      const converter = new showdown.Converter();
+      const html = converter.makeHtml(changelog).replace(/[{}]+/g, '');
+      fs.writeFileSync(this.changelogComponentFile, html, 'utf8');
+    } else {
+      this.logger.warn('Changelog component file was not found. Skip step')
+    }
   }
 
   updateAppConfigVersion(newVersion) {
-    const filePath = path.resolve(process.cwd(), './src/app-config/index.ts');
+    const filePath = this.appConfigFile;
+    const appVersionKey = this.workspace.getKWSCommandValue('release.appConfig.key');
+
+    if (!filePath || !appVersionKey) {
+      this.logger.warn('Cannot update application version. Reason: missing filePath or appVersion key.');
+      return false;
+    }
+
+    const appVersionPattern = new RegExp(`"${appVersionKey}":.*,`, 'g');
+    let result;
 
     fs.readFile(filePath, 'utf8', (err, data) => {
       if (err) {
         return this.logger.error(err);
       }
 
-      const result = data.replace(/'appVersion':.*,/g, `'appVersion': '${ newVersion }',`);
+      if (appVersionPattern.test(data)) {
+        result = data.replace(appVersionPattern, `"${appVersionKey}": "${ newVersion }",`);
+      } else {
+        result = data.replace(/^export const environment = {/, `export const environment = {\n"${appVersionKey}": "${ newVersion }",`);
+      }
+
       fs.writeFileSync(filePath, result, 'utf8');
     });
+
+    return true;
   }
 
   async commitChanges(newVersion) {
-    const paths = [changelogFile, changelogComponentFile];
+    const paths = [this.changelogFile, this.changelogComponentFile, this.appConfigFile].filter(Boolean);
     const commitMessage = `chore(release): ${newVersion}`;
     let msg = 'committing %s';
-    let toAdd = `${changelogFile} ${changelogComponentFile}`;
+    let toAdd = `${this.changelogFile} ${this.changelogComponentFile} ${this.appConfigFile}`.trim();
 
-    Object.keys(configsToUpdate).forEach(config => {
-      if (configsToUpdate[config]) {
+    Object.keys(this.configsToUpdate).forEach(config => {
+      if (this.configsToUpdate[config]) {
         msg += ' and %s';
         paths.unshift(path.basename(config));
         toAdd += ' ' + path.relative(process.cwd(), config);
