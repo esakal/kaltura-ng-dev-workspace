@@ -101,11 +101,16 @@ export default class ReleaseCommand extends Command {
         return;
       }
 
-      this.logger.info(`Tagging release. Current version: ${ version }.`);
-      await this.workspace.runShellCommnad(`git tag -a v${ version } -m 'v${ version }'`);
+      const currentTag = await this.workspace.runShellCommnad('git describe --match="v?.?.?" --abbrev=0');
+      if (semver.gt(version, currentTag)) {
+        this.logger.info(`Tagging release. Current version: ${ version }.`);
+        await this.workspace.runShellCommnad(`git tag -a v${ version } -m 'v${ version }'`);
 
-      this.logger.info('Publishing release.');
-      // await this.workspace.runShellCommnad(`git push --follow-tags origin ${this.options.branch}`);
+        this.logger.info('Publishing release.');
+        await this.workspace.runShellCommnad(`git push --follow-tags origin ${this.options.branch}`);
+      } else {
+        this.logger.error(`Current version (${version}) is less than the last tag (${currentTag}). Abort.`);
+      }
     }
 
   }
