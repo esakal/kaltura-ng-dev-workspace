@@ -3,7 +3,6 @@
 import Command from '../command';
 import conventionalRecommendedBump from 'conventional-recommended-bump';
 import semver from 'semver';
-import path from 'path';
 import fs from 'fs';
 import conventionalChangelog from 'conventional-changelog';
 import { accessSync } from 'fs-access';
@@ -26,13 +25,13 @@ export const description = 'release the new version';
 export const builder = {
   'prepare': {
     group: 'Command Options:',
-    describe: 'bump version, update configs, update change logs',
+    describe: 'Preparing to release',
     type: 'boolean',
     default: true,
   },
   'publish': {
     group: 'Command Options:',
-    describe: 'tag release and push changes',
+    describe: 'Create release and push changes',
     type: 'boolean',
     default: false
   },
