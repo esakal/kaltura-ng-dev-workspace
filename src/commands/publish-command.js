@@ -13,7 +13,6 @@ import { rules } from '@commitlint/config-angular';
 import findUp from 'find-up';
 import loadJsonFile from 'load-json-file';
 import writeJsonFile from 'write-json-file';
-import * as path from 'path'
 
 export async function handler(argv) {
   await new ReleaseCommand(argv._, argv).run();
@@ -34,27 +33,31 @@ export const builder = {
     group: 'Command Options:',
     describe: 'Create release and push changes',
     type: 'boolean',
-    default: false
+    default: true
   },
   'branch': {
     group: 'Command Options:',
     describe: 'Change target branch',
     type: 'string',
     default: 'master'
+  },
+  'raw-changelog': {
+    group: 'Command Options:',
+    describe: 'Raw HTML output',
+    type: 'boolean',
+    default: false
   }
 };
 
 
 export default class ReleaseCommand extends Command {
   async runCommand() {
-    console.log(path.resolve(__dirname));
-    process.exit(0);
-
     this.filesToUpdate = [];
 
     const currentBranch = (await this.workspace.runShellCommand('git name-rev --name-only HEAD')).trim();
     const pkg = loadJsonFile.sync(findUp.sync('package.json', { cwd: process.cwd() }));
     let version = pkg.version;
+    let changelog;
 
     if (this.options.branch !== currentBranch) {
       this.logger.error('Specified branch is different from active. Please checkout to specified branch or provide relevant branch name.');
@@ -74,8 +77,7 @@ export default class ReleaseCommand extends Command {
 
       this.updateConfigs(version);
 
-      const changelog = await this.updateChangelog(version);
-      this.updateChangelogComponent(changelog);
+      changelog = await this.updateChangelog(version);
       this.updateAppConfigVersion(version);
       await this.commitChanges(version);
     }
@@ -87,10 +89,11 @@ export default class ReleaseCommand extends Command {
 
       const currentTag = await this.workspace.runShellCommand('git describe --match="v?.?.?" --abbrev=0');
       if (semver.gt(version, currentTag)) {
+        await this.updateChangelogComponent(changelog);
         await this.createTag();
         await this.publish();
       } else {
-        this.logger.error(`Current version (${version}) is less than the last tag (${currentTag}). Abort.`);
+        this.logger.error(`Current version (${version}) is less or equal than the last tag (${currentTag}). You need to bump version. Abort.`);
       }
     }
   }
@@ -202,7 +205,30 @@ export default class ReleaseCommand extends Command {
     }
   }
 
-  updateChangelogComponent(changelog) {
+  prepareChangelog(changelog) {
+    let preparedChangelog = changelog;
+
+    // leave only features sections
+    preparedChangelog.match(/##(#)?\s*(.*?)[\s\S]*?(?=##(#)?|<a|$)/gi)
+      .forEach(section => {
+        if (!/(Features)/.test(section)) {
+          preparedChangelog = preparedChangelog.replace(section, '');
+        }
+      });
+
+    // replace header link with version
+    preparedChangelog.match(/\[(\d\.\d\.\d(-.*)*?)\]\([\s\S]*?\)/gi)
+      .forEach(header => {
+        preparedChangelog = preparedChangelog.replace(header, header.match(/\[(.*?)\]/)[1]);
+      });
+
+    // remove all links
+    preparedChangelog = preparedChangelog.replace(/\(?\[.*?\]\)?\(.*?\)\)?/gi, '');
+
+    return preparedChangelog;
+  }
+
+  async updateChangelogComponent(changelog) {
     this.logger.info('Update changelog component.');
 
     const changelogComponentPath = this.workspace.getKWSCommandValue('release.changeLog.htmlPath');
@@ -213,11 +239,29 @@ export default class ReleaseCommand extends Command {
       return;
     }
 
+    let changelogContent = changelog;
+
+    if (!changelogContent) {
+      const changelogPath = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
+      if (changelogPath) {
+        changelogContent = fs.readFileSync(changelogPath, 'utf-8');
+      } else {
+        this.logger.warn('CHANGELOG.md file was not found. Make sure it exists. Skip step');
+        return;
+      }
+    }
+
     this.filesToUpdate.push(filePath);
 
+    if (!this.options['raw-changelog']) {
+      changelogContent = this.prepareChangelog(changelogContent);
+    }
+
     const converter = new showdown.Converter();
-    const html = converter.makeHtml(changelog).replace(/[{}]+/g, '');
+    const html = converter.makeHtml(changelogContent).replace(/[{}]+/g, '');
     fs.writeFileSync(filePath, html, 'utf8');
+
+    await this.commitChanges(null, 'chore(changelog): update changelog component');
   }
 
   updateAppConfigVersion(newVersion) {
@@ -252,10 +296,10 @@ export default class ReleaseCommand extends Command {
     });
   }
 
-  async commitChanges(newVersion) {
+  async commitChanges(newVersion, message) {
     this.logger.info('Commit changes.');
 
-    const commitMessage = `chore(release): ${newVersion}`;
+    const commitMessage = message || `chore(release): ${newVersion}`;
     const toAdd = this.filesToUpdate.join(' ');
 
     await this.workspace.runShellCommand(`git add ${toAdd}`);
