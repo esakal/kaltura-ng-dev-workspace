@@ -5,7 +5,7 @@ import conventionalRecommendedBump from 'conventional-recommended-bump';
 import semver from 'semver';
 import fs from 'fs';
 import conventionalChangelog from 'conventional-changelog';
-import { accessSync } from 'fs-access';
+import * as fsAccess from 'fs-access';
 import showdown from 'showdown';
 import util from 'util';
 import { lint } from '@commitlint/core';
@@ -13,6 +13,7 @@ import { rules } from '@commitlint/config-angular';
 import findUp from 'find-up';
 import loadJsonFile from 'load-json-file';
 import writeJsonFile from 'write-json-file';
+import * as path from 'path'
 
 export async function handler(argv) {
   await new ReleaseCommand(argv._, argv).run();
@@ -37,7 +38,7 @@ export const builder = {
   },
   'branch': {
     group: 'Command Options:',
-    describe: 'change target branch',
+    describe: 'Change target branch',
     type: 'string',
     default: 'master'
   }
@@ -46,6 +47,9 @@ export const builder = {
 
 export default class ReleaseCommand extends Command {
   async runCommand() {
+    console.log(path.resolve(__dirname));
+    process.exit(0);
+
     this.filesToUpdate = [];
 
     const currentBranch = (await this.workspace.runShellCommand('git name-rev --name-only HEAD')).trim();
@@ -157,8 +161,9 @@ export default class ReleaseCommand extends Command {
     this.logger.info('Update changelog.');
 
     return new Promise((resolve, reject) => {
+      this.createIfMissing('CHANGELOG.md');
+
       const filePath = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
-      this.createIfMissing(filePath);
 
       this.filesToUpdate.push(filePath);
 
@@ -189,7 +194,7 @@ export default class ReleaseCommand extends Command {
 
   createIfMissing(file) {
     try {
-      accessSync(file, fs.F_OK)
+      fsAccess.sync(file, fs.F_OK)
     } catch (err) {
       if (err.code === 'ENOENT') {
         fs.writeFileSync(file, '\n');
