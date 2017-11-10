@@ -13,6 +13,7 @@ import { rules } from '@commitlint/config-angular';
 import findUp from 'find-up';
 import loadJsonFile from 'load-json-file';
 import writeJsonFile from 'write-json-file';
+import publishRelease from 'publish-release';
 
 export async function handler(argv) {
   await new ReleaseCommand(argv._, argv).run();
@@ -46,6 +47,11 @@ export const builder = {
     describe: 'Raw HTML output',
     type: 'boolean',
     default: false
+  },
+  'gh-token': {
+    group: 'Command Options:',
+    describe: 'Github API OAuth Token',
+    type: 'string'
   }
 };
 
@@ -92,17 +98,69 @@ export default class ReleaseCommand extends Command {
       const currentTag = await this.workspace.runShellCommand('git describe --match="v?.?.?" --abbrev=0');
       if (semver.gt(version, currentTag)) {
         await this.updateChangelogComponent(changelog);
-        await this.createTag();
+        await this.createTag(version);
         await this.publish();
+        await this.createRelease(version, currentBranch);
       } else {
         this.logger.error(`Current version (${version}) is less or equal than the last tag (${currentTag}). You need to bump version. Abort.`);
       }
     }
   }
 
-  async createTag() {
+  async getOwnerAndRepo() {
+    const data = await this.workspace.runShellCommand(`git remote show origin -n | grep h.URL | sed 's/.*://;s/.git$//'`);
+    if (!data) {
+      this.logger.error('Cannot get owner/repo. Abort');
+      process.exit(1);
+    }
+
+    const [owner, repo] = data.split('/');
+    return { owner, repo };
+  }
+
+  async createRelease(version, target) {
+    const token = this.workspace.getKWSCommandValue('release.appConfig.path') || this.options['gh-token'];
+
+    if (!token) {
+      this.logger.error('Github token is not provided. Release will not be created on Github. Abort');
+      process.exit(1);
+    }
+
+    const { owner, repo } = await this.getOwnerAndRepo();
+    const { content } = this.getChangelogContent();
+    let lastReleaseChangelog = `chore(release): ${version}`;
+
+    if (content) {
+      lastReleaseChangelog = content
+        .match(/<a name[\s\S]*?(?=<a name|$)/)[0] // last release section
+        .replace(/<a name[\s\S]*?(\d{4}-\d{2}-\d{2}\))/, '') // remove header
+        .trim();
+    }
+
+    const options = {
+      tag: `v${version}`,
+      target_commitish: target,
+      name: `v${version}`,
+      notes: lastReleaseChangelog,
+      repo: repo.trim(),
+      owner: owner.trim(),
+      token: token
+    };
+
+    return new Promise((resolve, reject) => {
+      publishRelease(options, (err, result) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  }
+
+  async createTag(version) {
     this.logger.info(`Tagging release. Current version: ${ version }.`);
-    await this.workspace.runShellCommand(`git tag -a v${ version }`);
+    await this.workspace.runShellCommand(`git tag -a v${ version } -m 'chore(release): ${ version }'`);
   }
 
   async publish() {
@@ -180,13 +238,10 @@ export default class ReleaseCommand extends Command {
     this.logger.info('Update changelog.');
 
     return new Promise((resolve, reject) => {
-      this.createIfMissing('CHANGELOG.md');
-
-      const filePath = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
+      let { filePath, content: oldContent } = this.getChangelogContent();
 
       this.filesToUpdate.push(filePath);
 
-      let oldContent = fs.readFileSync(filePath, 'utf-8');
       if (oldContent.indexOf('<a name=') !== -1) {
         oldContent = oldContent.substring(oldContent.indexOf('<a name='));
       }
@@ -209,6 +264,15 @@ export default class ReleaseCommand extends Command {
         return resolve(changelog);
       })
     })
+  }
+
+  getChangelogContent() {
+    this.createIfMissing('CHANGELOG.md');
+
+    const filePath = findUp.sync('CHANGELOG.md', { cwd: process.cwd() });
+    const content = fs.readFileSync(filePath, 'utf-8');
+
+    return { filePath, content };
   }
 
   createIfMissing(file) {

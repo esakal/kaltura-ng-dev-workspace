@@ -43,6 +43,7 @@
     "lodash": "^4.17.4",
     "npmlog": "^4.1.2",
     "object-assign-deep": "^0.3.1",
+    "publish-release": "^1.3.3",
     "read-pkg": "^2.0.0",
     "shelljs": "^0.7.8",
     "showdown": "^1.7.5",
