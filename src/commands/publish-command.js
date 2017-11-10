@@ -54,7 +54,7 @@ export default class ReleaseCommand extends Command {
   async runCommand() {
     this.filesToUpdate = [];
 
-    const currentBranch = (await this.workspace.runShellCommand('git name-rev --name-only HEAD')).trim();
+    const currentBranch = (await this.workspace.runShellCommand('git symbolic-ref --short HEAD')).trim();
     const pkg = loadJsonFile.sync(findUp.sync('package.json', { cwd: process.cwd() }));
     let version = pkg.version;
     let changelog;
@@ -69,8 +69,10 @@ export default class ReleaseCommand extends Command {
       this.logger.info('Prepare phase');
       await this.ensureCommittedChanges();
 
-      if (!(await this.lintCommitsSinceLastRelease())) {
-        this.logger.warn('Some of commits since last release is NOT tapping into conventional-commits. Consider following conventional-commits standard http://conventionalcommits.org/.');
+      const commitsValidation = await this.lintCommitsSinceLastRelease();
+      if (!commitsValidation.result) {
+        this.logger.warn('Those commits since last release is NOT tapping into conventional-commits. Consider following conventional-commits standard http://conventionalcommits.org/.');
+        this.logger.warn(commitsValidation.invalidCommits);
       }
 
       version = await this.getNewVersion(version);
@@ -116,10 +118,19 @@ export default class ReleaseCommand extends Command {
   }
 
   async lintCommitsSinceLastRelease() {
-    const commits = await this.workspace.runShellCommand('git log `git describe --match="v?.?.?" --abbrev=0`..HEAD --oneline');
-    const result = lint(commits, rules);
+    const commits = await this.workspace.runShellCommand('git log `git describe --match="v?.?.?" --abbrev=0`..HEAD --oneline --pretty=format:"%s"');
+    const result = await lint(commits, rules);
+    let invalidCommits;
 
-    return result.valid;
+    if (!result.valid) {
+      invalidCommits = (await Promise.all(
+        commits
+          .split('\n')
+          .map(async (commit) => !(await lint(commit, rules)).valid ? commit : null)
+      )).filter(Boolean).join('\n');
+    }
+
+    return { result: result.valid, invalidCommits };
   }
 
   async getNewVersion(currentVersion) {
