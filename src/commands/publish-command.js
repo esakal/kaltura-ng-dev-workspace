@@ -128,6 +128,11 @@ export default class ReleaseCommand extends Command {
           .split('\n')
           .map(async (commit) => !(await lint(commit, rules)).valid ? commit : null)
       )).filter(Boolean).join('\n');
+
+      if (commits.split('\n').length === invalidCommits.split('\n').length) {
+        this.logger.error(`Nothing to commit. Abort.`);
+        process.exit(1);
+      }
     }
 
     return { result: result.valid, invalidCommits };
