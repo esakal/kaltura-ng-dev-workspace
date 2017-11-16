@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="2.3.0"></a>
+# [2.3.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.2.0...v2.3.0) (2017-11-16)
+
+
+### Features
+
+* add command npm-link to easily link libraries after running npm install ([8f78e77](https://github.com/kaltura/kaltura-ng-dev-workspace/commit/8f78e77))
+
+
+
 <a name="2.2.0"></a>
 # [2.2.0](https://github.com/kaltura/kaltura-ng-dev-workspace/compare/v2.1.1...v2.2.0) (2017-09-27)
 
