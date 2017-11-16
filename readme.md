@@ -86,14 +86,27 @@ $ npm run setup
   
 ## Commands
 
-#### init
-
 #### setup
+Prepare your workspace for local development by running the following actions:
+1. get libraries dependencies by running `npm install` in each library separately
+1. link libraries locally by runing `npm link` in each library separately.
+1. build a dependency graph and re-build all libraries.
+
+> This command might take several minutes depending if you already have installed dependencies in your libraries or not.
+
+#### npm-link
+Re-create local links between libraries by running the following actions:
+1. get libraries dependencies by running `npm install` in each library separately
+1. link libraries locally by runing `npm link` in each library separately.
+
+> This command might take several minutes depending if you already have installed dependencies in your libraries or not.
+
+Use this command after running `npm install` in any library which revoke local links to other libraries.
 
 #### run
 
 #### licenses
 
 #### clean
- 
+Delete `node_modules` folder of workspace libraries.
  
