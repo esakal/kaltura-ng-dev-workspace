@@ -92,8 +92,14 @@ export default class ReleaseCommand extends Command {
 
     if (this.options.publish) {
       this.logger.info('Publish phase.');
-
       await this.ensureCommittedChanges();
+
+      const githubApiInfo = await this.getGithubApiInfo();
+
+      if (!githubApiInfo) {
+        this.logger.error('failed to extract github api info. aborting');
+        process.exit(1);
+      }
 
       const currentTag = await this.workspace.runShellCommand('git describe --match="v?.?.?" --abbrev=0');
       if (semver.gt(version, currentTag)) {
@@ -107,26 +113,40 @@ export default class ReleaseCommand extends Command {
     }
   }
 
-  async getOwnerAndRepo() {
-    const data = await this.workspace.runShellCommand(`git remote show origin -n | grep h.URL | sed 's/.*://;s/.git$//'`);
-    if (!data) {
-      this.logger.error('Cannot get owner/repo. Abort');
-      process.exit(1);
-    }
+  async getGithubApiInfo() {
 
-    const [owner, repo] = data.split('/');
-    return { owner, repo };
+    try {
+
+      const token = this.workspace.getKWSCommandValue('release.appConfig.githubToken') || this.options['gh-token'];
+
+      if (!token) {
+        throw new Error('Github token is not provided. aborting');
+      }
+
+      const originUrl = await this.workspace.runShellCommand(`git remote get-url origin`);
+      const [owner, repo] = (originUrl || '').match(/([^\/]+\/[^\/]+)[.]git/)[1].split('/');
+
+      if (!owner || !repo) {
+        throw new Error('failed to extract owner/repo of origin');
+      }
+
+      return { token, owner, repo };
+    }catch(e)
+    {
+      this.logger.error(`failed to create github api info with error ${e.message}`);
+      return null;
+    }
   }
 
   async createRelease(version, target) {
-    const token = this.workspace.getKWSCommandValue('release.appConfig.path') || this.options['gh-token'];
 
-    if (!token) {
-      this.logger.error('Github token is not provided. Release will not be created on Github. Abort');
+    const githubApiInfo = await this.getGithubApiInfo();
+
+    if (!githubApiInfo) {
+      this.logger.error('failed to extract github api info. aborting');
       process.exit(1);
     }
 
-    const { owner, repo } = await this.getOwnerAndRepo();
     const { content } = this.getChangelogContent();
     let lastReleaseChangelog = `chore(release): ${version}`;
 
@@ -142,9 +162,9 @@ export default class ReleaseCommand extends Command {
       target_commitish: target,
       name: `v${version}`,
       notes: lastReleaseChangelog,
-      repo: repo.trim(),
-      owner: owner.trim(),
-      token: token
+      token: githubApiInfo.token,
+      owner: githubApiInfo.owner,
+      repo: githubApiInfo.repo
     };
 
     return new Promise((resolve, reject) => {
