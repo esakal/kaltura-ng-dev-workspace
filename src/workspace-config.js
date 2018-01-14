@@ -242,7 +242,7 @@ export default class WorkspaceConfig
     writeJsonFile.sync(path.join(this.lernaDirPath,'lerna.json'), lernaJson, { indent: 2 });
   }
 
-  async runShellCommnad(command,silent)
+  async runShellCommand(command, silent)
   {
     return new Promise((resolve,reject) =>
     {

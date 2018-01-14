@@ -29,7 +29,7 @@ export default class BookmarkCommand extends Command {
     try {
       if (this.options.update) {
         log.info(`updating bookmark ${this.bookmarkName} to the latest commit in local repo`);
-        let latestCommitId = await this.workspace.runShellCommnad('git log --format="%H" -n 1');
+        let latestCommitId = await this.workspace.runShellCommand('git log --format="%H" -n 1');
         latestCommitId = latestCommitId.match(/^[a-f0-9]{7,40}/);
         log.verbose(`commit id ${latestCommitId}`);
 
@@ -48,13 +48,13 @@ export default class BookmarkCommand extends Command {
 
         log.silly("bookmark commit id", bookmarkCommitId);
 
-        const hasUnCommitedChanges = !!(await this.workspace.runShellCommnad('git status -s', true));
+        const hasUnCommitedChanges = !!(await this.workspace.runShellCommand('git status -s', true));
         log.silly("hasUnCommitedChanges", hasUnCommitedChanges);
 
         if (hasUnCommitedChanges) {
           log.warn('it seems that you have uncommited changes. to perform this command you should either commit your chnages or reset them. aborting command');
         } else {
-          await this.workspace.runShellCommnad(`git checkout ${bookmarkCommitId}`, false);
+          await this.workspace.runShellCommand(`git checkout ${bookmarkCommitId}`, false);
         }
       }
     }
