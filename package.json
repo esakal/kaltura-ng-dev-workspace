@@ -48,7 +48,7 @@
     "read-pkg": "^2.0.0",
     "shelljs": "^0.7.8",
     "showdown": "^1.7.5",
-    "standard-version": "^4.2.0",
+    "standard-version": "^8.0.1",
     "write-json-file": "^2.2.0"
   },
   "devDependencies": {
